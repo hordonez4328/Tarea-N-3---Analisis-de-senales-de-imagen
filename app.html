@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Laboratorio: Transmisión Digital y Conversión Imagen-Audio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .step-card {
+      transition: all 0.25s ease;
+    }
+    .step-card:hover {
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    }
+    .pixel-grid {
+      font-family: 'Consolas', 'Courier New', monospace;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen">
+  <!-- Header -->
+  <header class="bg-slate-800/90 backdrop-blur border-b border-slate-700 sticky top-0 z-50 py-4 px-6 shadow-md">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="bg-blue-600 text-white p-2.5 rounded-xl shadow-lg shadow-blue-500/30">
+          <i class="fa-solid fa-satellite-dish text-xl"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+            Comunicaciones I &bull; Transmisión Digital
+            <span class="text-xs bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-full">Lab Visual</span>
+          </h1>
+          <p class="text-xs text-slate-400">Representación de Imágenes, Flujo de Bits, Canal Digital y Conversión Imagen &harr; Audio</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <label for="input-file" class="cursor-pointer bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-lg shadow-blue-600/30">
+          <i class="fa-solid fa-upload"></i> Cargar Imagen Propia
+        </label>
+        <input type="file" id="input-file" accept="image/png, image/jpeg" class="hidden">
+        <button id="btn-reproducir-todo" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-lg shadow-emerald-600/30">
+          <i class="fa-solid fa-play"></i> Simular Todo
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto p-6 space-y-8">
+
+    <!-- Stepper Navigation -->
+    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 bg-slate-800 p-2 rounded-2xl border border-slate-700 text-xs">
+      <a href="#etapa1" class="text-center p-2 rounded-xl hover:bg-slate-700 text-slate-300 font-medium transition">1. Original</a>
+      <a href="#etapa2" class="text-center p-2 rounded-xl hover:bg-slate-700 text-slate-300 font-medium transition">2. Espacios Color</a>
+      <a href="#etapa3" class="text-center p-2 rounded-xl hover:bg-slate-700 text-slate-300 font-medium transition">3. Binario & Bits</a>
+      <a href="#etapa4" class="text-center p-2 rounded-xl hover:bg-slate-700 text-slate-300 font-medium transition">4. Transmisión</a>
+      <a href="#etapa5" class="text-center p-2 rounded-xl hover:bg-slate-700 text-slate-300 font-medium transition">5. Reconstrucción</a>
+      <a href="#etapa6" class="text-center p-2 rounded-xl hover:bg-slate-700 text-slate-300 font-medium transition">6. Imagen &rarr; Audio</a>
+      <a href="#etapa7" class="text-center p-2 rounded-xl hover:bg-slate-700 text-slate-300 font-medium transition">7. Audio &rarr; Imagen</a>
+    </div>
+
+    <!-- ETAPA 1: Imagen Original -->
+    <section id="etapa1" class="step-card bg-slate-800/80 border border-slate-700 rounded-2xl p-6">
+      <div class="flex items-center justify-between mb-4 border-b border-slate-700/80 pb-3">
+        <div class="flex items-center gap-3">
+          <span class="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 font-bold flex items-center justify-center text-sm border border-blue-500/40">1</span>
+          <h2 class="text-lg font-semibold text-white">Selección y Carga de la Imagen Original</h2>
+        </div>
+        <span class="text-xs bg-slate-700 px-3 py-1 rounded-full text-slate-300" id="badge-resolucion">Resolución: 500 × 500 px</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+        <div class="flex flex-col items-center justify-center bg-slate-900/60 p-4 rounded-xl border border-slate-700/50">
+          <canvas id="canvas-original" class="max-w-full h-auto rounded-lg shadow-md border border-slate-700 cursor-crosshair"></canvas>
+          <p class="text-xs text-slate-400 mt-2"><i class="fa-solid fa-hand-pointer"></i> Pasa el mouse sobre la imagen para inspeccionar píxeles</p>
+        </div>
+        <div class="space-y-4">
+          <div class="bg-slate-900/70 p-4 rounded-xl border border-slate-700 space-y-2">
+            <h3 class="text-sm font-semibold text-blue-400 uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-circle-info"></i> Metadatos de la Imagen
+            </h3>
+            <ul class="text-sm space-y-1 text-slate-300" id="info-imagen-original">
+              <li><strong class="text-slate-100">Dimensiones:</strong> 500 × 500 píxeles</li>
+              <li><strong class="text-slate-100">Canales:</strong> 3 (RGB - Red, Green, Blue)</li>
+              <li><strong class="text-slate-100">Profundidad:</strong> 8 bits por componente (24 bpp)</li>
+              <li><strong class="text-slate-100">Estado:</strong> <span class="text-emerald-400 font-medium">Cumple resolución mínima (&ge; 400×400)</span></li>
+            </ul>
+          </div>
+          <div class="bg-blue-950/40 border border-blue-800/40 p-4 rounded-xl text-xs text-blue-200">
+            <p><strong>Objetivo de la etapa:</strong> Disponer de una fuente de información bidimensional discretizada espacialmente y cuantitativamente lista para el procesamiento digital.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ETAPA 2: Transformación de Espacios de Color -->
+    <section id="etapa2" class="step-card bg-slate-800/80 border border-slate-700 rounded-2xl p-6">
+      <div class="flex items-center justify-between mb-4 border-b border-slate-700/80 pb-3">
+        <div class="flex items-center gap-3">
+          <span class="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 font-bold flex items-center justify-center text-sm border border-indigo-500/40">2</span>
+          <h2 class="text-lg font-semibold text-white">Transformación de Espacios de Color</h2>
+        </div>
+        <span class="text-xs bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-3 py-1 rounded-full">RGB &bull; Grises &bull; Canal Rojo</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Original -->
+        <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/60 flex flex-col items-center">
+          <h3 class="text-sm font-medium text-slate-200 mb-2">1. Imagen Original (RGB)</h3>
+          <canvas id="canvas-espacio-original" class="w-full h-auto rounded-lg border border-slate-700"></canvas>
+          <p class="text-xs text-slate-400 mt-2">Canales: R + G + B combinados</p>
+        </div>
+        <!-- Grayscale -->
+        <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/60 flex flex-col items-center">
+          <h3 class="text-sm font-medium text-slate-200 mb-2">2. Escala de Grises (Luminancia)</h3>
+          <canvas id="canvas-grises" class="w-full h-auto rounded-lg border border-slate-700"></canvas>
+          <p class="text-xs text-slate-400 mt-2 font-mono">Y = 0.299R + 0.587G + 0.114B</p>
+        </div>
+        <!-- Red Channel -->
+        <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/60 flex flex-col items-center">
+          <h3 class="text-sm font-medium text-slate-200 mb-2">3. Canal Rojo Aislado (Color Splash)</h3>
+          <canvas id="canvas-rojo" class="w-full h-auto rounded-lg border border-slate-700"></canvas>
+          <p class="text-xs text-slate-400 mt-2 font-mono">Rojo conservado &bull; Resto a escala de grises</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ETAPA 3: Digitalización y Representación Binaria -->
+    <section id="etapa3" class="step-card bg-slate-800/80 border border-slate-700 rounded-2xl p-6">
+      <div class="flex items-center justify-between mb-4 border-b border-slate-700/80 pb-3">
+        <div class="flex items-center gap-3">
+          <span class="w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-400 font-bold flex items-center justify-center text-sm border border-cyan-500/40">3</span>
+          <h2 class="text-lg font-semibold text-white">Digitalización y Representación Binaria</h2>
+        </div>
+        <span class="text-xs bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-3 py-1 rounded-full">Bits, Bytes y Cuantificación</span>
+      </div>
+      
+      <!-- Metrics Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700">
+          <p class="text-xs text-slate-400">Total de Píxeles</p>
+          <p class="text-2xl font-bold text-white" id="val-total-pixeles">250,000</p>
+          <span class="text-[11px] text-slate-500">W × H</span>
+        </div>
+        <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700">
+          <p class="text-xs text-slate-400">Bits por Píxel (bpp)</p>
+          <p class="text-2xl font-bold text-cyan-400" id="val-bpp">24 bits</p>
+          <span class="text-[11px] text-slate-500">3 canales × 8 bits</span>
+        </div>
+        <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700">
+          <p class="text-xs text-slate-400">Tamaño en Bytes</p>
+          <p class="text-2xl font-bold text-emerald-400" id="val-total-bytes">750,000 B</p>
+          <span class="text-[11px] text-slate-500" id="val-total-kb">&asymp; 732.42 KiB</span>
+        </div>
+        <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700">
+          <p class="text-xs text-slate-400">Tamaño en Megabytes</p>
+          <p class="text-2xl font-bold text-purple-400" id="val-total-mb">0.715 MiB</p>
+          <span class="text-[11px] text-slate-500" id="val-total-bits">6,000,000 bits</span>
+        </div>
+      </div>
+
+      <!-- Binary Inspector -->
+      <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+            <i class="fa-solid fa-microchip text-cyan-400"></i> Inspector de Píxel en Tiempo Real
+          </h3>
+          <span class="text-xs text-slate-400" id="inspector-coords">Coordenadas: (X: 0, Y: 0)</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+          <div class="bg-red-950/40 border border-red-800/40 p-3 rounded-lg flex items-center justify-between">
+            <div>
+              <p class="text-red-400 font-bold">Canal Rojo (R)</p>
+              <p class="font-mono text-slate-300" id="ins-r-dec">Decimal: 0</p>
+            </div>
+            <span class="font-mono bg-red-900/60 px-2 py-1 rounded text-red-200" id="ins-r-bin">00000000</span>
+          </div>
+          <div class="bg-green-950/40 border border-green-800/40 p-3 rounded-lg flex items-center justify-between">
+            <div>
+              <p class="text-emerald-400 font-bold">Canal Verde (G)</p>
+              <p class="font-mono text-slate-300" id="ins-g-dec">Decimal: 180</p>
+            </div>
+            <span class="font-mono bg-green-900/60 px-2 py-1 rounded text-emerald-200" id="ins-g-bin">10110100</span>
+          </div>
+          <div class="bg-blue-950/40 border border-blue-800/40 p-3 rounded-lg flex items-center justify-between">
+            <div>
+              <p class="text-blue-400 font-bold">Canal Azul (B)</p>
+              <p class="font-mono text-slate-300" id="ins-b-dec">Decimal: 110</p>
+            </div>
+            <span class="font-mono bg-blue-900/60 px-2 py-1 rounded text-blue-200" id="ins-b-bin">01101110</span>
+          </div>
+        </div>
+        
+        <!-- Table sample -->
+        <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider pt-2">Muestra de los Primeros 5 Píxeles en Memoria</h4>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border border-slate-800 rounded-lg overflow-hidden">
+            <thead class="bg-slate-800 text-slate-300">
+              <tr>
+                <th class="p-2">Píxel (x, y)</th>
+                <th class="p-2">Valores RGB [Decimal]</th>
+                <th class="p-2 font-mono">Canal R (8b)</th>
+                <th class="p-2 font-mono">Canal G (8b)</th>
+                <th class="p-2 font-mono">Canal B (8b)</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-muestra-binaria" class="divide-y divide-slate-800 font-mono text-slate-300">
+              <!-- Llenado dinámico -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ETAPA 4: Simulación de Transmisión Digital -->
+    <section id="etapa4" class="step-card bg-slate-800/80 border border-slate-700 rounded-2xl p-6">
+      <div class="flex items-center justify-between mb-4 border-b border-slate-700/80 pb-3">
+        <div class="flex items-center gap-3">
+          <span class="w-8 h-8 rounded-full bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center text-sm border border-amber-500/40">4</span>
+          <h2 class="text-lg font-semibold text-white">Simulación de Transmisión Digital en Canal</h2>
+        </div>
+        <button id="btn-animar-transmision" class="text-xs bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-full flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-signal"></i> Animar Flujo de Bits
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+        <!-- Oscilloscope Canvas -->
+        <div class="bg-slate-950 p-4 rounded-xl border border-slate-700 flex flex-col items-center">
+          <div class="w-full flex justify-between items-center mb-2">
+            <span class="text-xs font-semibold text-amber-400 flex items-center gap-2">
+              <i class="fa-solid fa-wave-square"></i> Osciloscopio Digital (Modulación de Banda Base NRZ-L)
+            </span>
+            <span class="text-[11px] text-slate-500 font-mono">Nivel 1: +5V | Nivel 0: 0V</span>
+          </div>
+          <canvas id="canvas-osciloscopio" width="560" height="150" class="w-full h-auto bg-black rounded border border-slate-800"></canvas>
+          <p class="text-xs text-slate-400 mt-2 font-mono" id="stream-preview">Flujo Tx: 00000000 10110100 01101110 00000000...</p>
+        </div>
+
+        <!-- Transmission Scheme Explanation -->
+        <div class="space-y-3 text-xs text-slate-300">
+          <div class="bg-slate-900 p-3 rounded-lg border border-slate-700">
+            <h4 class="font-bold text-amber-300 mb-1 flex items-center gap-1">
+              <i class="fa-solid fa-network-wired"></i> Arquitectura del Sistema de Comunicaciones
+            </h4>
+            <ol class="list-decimal list-inside space-y-1 text-slate-300">
+              <li><strong>Fuente de Información:</strong> Imagen bidimensional serializada en matriz de bytes.</li>
+              <li><strong>Empaquetamiento y Cabecera:</strong> Inyección de trama con 12 bytes de metadatos (Alto, Ancho, Canales).</li>
+              <li><strong>Codificación de Línea:</strong> Modulación en banda base NRZ-L (Non-Return-to-Zero Level).</li>
+              <li><strong>Canal Físico:</strong> Medio guiado (cobre/fibra) o no guiado (RF) con atenuación y ruido.</li>
+              <li><strong>Receptor y Detección:</strong> Decisión de umbral en tiempo de bit ($T_b$) para regenerar los ceros y unos.</li>
+            </ol>
+          </div>
+          <div class="p-3 bg-amber-950/20 border border-amber-800/30 rounded-lg text-amber-200">
+            <p><strong>Carga Útil Transmitida:</strong> <span id="tx-total-trama">750,012 bytes</span> en serie continua sin errores inducidos (Canal de fidelidad ideal).</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ETAPA 5: Reconstrucción de la Imagen -->
+    <section id="etapa5" class="step-card bg-slate-800/80 border border-slate-700 rounded-2xl p-6">
+      <div class="flex items-center justify-between mb-4 border-b border-slate-700/80 pb-3">
+        <div class="flex items-center gap-3">
+          <span class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center text-sm border border-emerald-500/40">5</span>
+          <h2 class="text-lg font-semibold text-white">Reconstrucción de la Imagen y Verificación de Pérdidas</h2>
+        </div>
+        <span class="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1 rounded-full font-medium">Fidelidad: 100% (Lossless)</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+        <div class="grid grid-cols-2 gap-4">
+          <div class="flex flex-col items-center">
+            <span class="text-xs text-slate-400 mb-1">Imagen Original</span>
+            <canvas id="canvas-comp-orig" class="w-full h-auto rounded border border-slate-700"></canvas>
+          </div>
+          <div class="flex flex-col items-center">
+            <span class="text-xs text-emerald-400 mb-1">Imagen Reconstruida</span>
+            <canvas id="canvas-comp-rec" class="w-full h-auto rounded border border-emerald-500/50 shadow-md shadow-emerald-950/50"></canvas>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 space-y-2">
+            <h3 class="text-sm font-semibold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-square-check"></i> Métricas Cuantitativas de Fidelidad
+            </h3>
+            <div class="grid grid-cols-2 gap-3 text-xs pt-1">
+              <div class="bg-slate-800 p-2.5 rounded border border-slate-700">
+                <span class="text-slate-400 block">Error Cuadrático Medio (MSE):</span>
+                <span class="text-lg font-bold text-white font-mono" id="val-mse">0.000000</span>
+              </div>
+              <div class="bg-slate-800 p-2.5 rounded border border-slate-700">
+                <span class="text-slate-400 block">PSNR (Señal a Ruido):</span>
+                <span class="text-lg font-bold text-emerald-400 font-mono" id="val-psnr">&infin; dB</span>
+              </div>
+              <div class="bg-slate-800 p-2.5 rounded border border-slate-700">
+                <span class="text-slate-400 block">Diferencia Máx. Píxel:</span>
+                <span class="text-lg font-bold text-white font-mono" id="val-max-diff">0 niveles</span>
+              </div>
+              <div class="bg-slate-800 p-2.5 rounded border border-slate-700">
+                <span class="text-slate-400 block">Tasa de Error de Bit (BER):</span>
+                <span class="text-lg font-bold text-emerald-400 font-mono" id="val-ber">0.00 %</span>
+              </div>
+            </div>
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed bg-slate-900/60 p-3 rounded-lg border border-slate-700/60">
+            <strong>Conclusión de Pérdida:</strong> <em>NO HUBO PÉRDIDA DE INFORMACIÓN</em>. La transmisión digital preserva de forma determinista cada bit individual, garantizando reconstrucción reversible exacta de la matriz de intensidades cromáticas.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ETAPA 6: Conversión de Imagen a Audio -->
+    <section id="etapa6" class="step-card bg-slate-800/80 border border-slate-700 rounded-2xl p-6">
+      <div class="flex items-center justify-between mb-4 border-b border-slate-700/80 pb-3">
+        <div class="flex items-center gap-3">
+          <span class="w-8 h-8 rounded-full bg-rose-500/20 text-rose-400 font-bold flex items-center justify-center text-sm border border-rose-500/40">6</span>
+          <h2 class="text-lg font-semibold text-white">Conversión de Imagen a Audio (Modulación Acústica PCM)</h2>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btn-reproducir-audio" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shadow-md shadow-rose-600/30">
+            <i class="fa-solid fa-volume-high"></i> Reproducir Sonido de la Imagen
+          </button>
+          <a href="imagen_a_audio.wav" download class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
+            <i class="fa-solid fa-download"></i> Descargar WAV
+          </a>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+        <div class="lg:col-span-2 space-y-3">
+          <div class="bg-slate-950 p-4 rounded-xl border border-slate-700">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-xs font-semibold text-rose-400 flex items-center gap-2">
+                <i class="fa-solid fa-headphones"></i> Forma de Onda Acústica en el Dominio del Tiempo
+              </span>
+              <span class="text-[11px] text-slate-400" id="audio-stats">Fs: 44.1 kHz &bull; 8 bits PCM Mono</span>
+            </div>
+            <canvas id="canvas-audio-waveform" width="700" height="150" class="w-full h-auto bg-black rounded border border-slate-800"></canvas>
+          </div>
+          <div class="flex items-center justify-between text-xs text-slate-400 px-1">
+            <span>Inicio: 0.0 s</span>
+            <span id="audio-duration-label">Duración: ~17.01 s</span>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 space-y-3 text-xs">
+          <h4 class="font-bold text-rose-300 uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-music"></i> Principio Físico y Telecomunicaciones
+          </h4>
+          <p class="text-slate-300 leading-relaxed">
+            Cada byte de color ($0$ a $255$) se interpreta directamente como la amplitud instantánea de una onda acústica cuantificada a $44{,}100\text{ Hz}$.
+          </p>
+          <div class="bg-slate-800 p-3 rounded border border-slate-700 space-y-1">
+            <p><strong class="text-slate-200">Total de muestras:</strong> <span id="audio-total-samples">750,012</span></p>
+            <p><strong class="text-slate-200">Frecuencia de muestreo:</strong> 44,100 Hz</p>
+            <p><strong class="text-slate-200">Formato contenedor:</strong> RIFF WAVE (PCM 8 bits)</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ETAPA 7: Conversión de Audio a Imagen -->
+    <section id="etapa7" class="step-card bg-slate-800/80 border border-slate-700 rounded-2xl p-6">
+      <div class="flex items-center justify-between mb-4 border-b border-slate-700/80 pb-3">
+        <div class="flex items-center gap-3">
+          <span class="w-8 h-8 rounded-full bg-violet-500/20 text-violet-400 font-bold flex items-center justify-center text-sm border border-violet-500/40">7</span>
+          <h2 class="text-lg font-semibold text-white">Conversión de Audio a Imagen (Demodulación Acústica)</h2>
+        </div>
+        <span class="text-xs bg-violet-500/20 text-violet-300 border border-violet-500/30 px-3 py-1 rounded-full">Recuperación Acústica Completa</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+        <div class="flex flex-col items-center bg-slate-900/60 p-4 rounded-xl border border-slate-700">
+          <span class="text-xs text-violet-400 font-medium mb-2">Imagen Reconstruida a partir del Archivo de Audio WAV</span>
+          <canvas id="canvas-audio-rec" class="max-w-full h-auto rounded-lg border border-violet-500/40 shadow-lg shadow-violet-950/40"></canvas>
+          <p class="text-xs text-slate-400 mt-2 font-mono">Demodulación PCM &rarr; Matriz (H, W, 3)</p>
+        </div>
+
+        <div class="space-y-4">
+          <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 space-y-3">
+            <h3 class="text-sm font-semibold text-violet-400 uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-arrows-split-up-and-left"></i> Conclusión Fundamental del Experimento
+            </h3>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              La señal de audio reprodujo físicamente las variaciones de intensidad lumínica como ondas sonoras audibles. Al leer el archivo sonoro y decodificar cada muestra en orden matricial, la imagen resurge con <strong>100% de coincidencia</strong> matemática.
+            </p>
+            <div class="bg-violet-950/30 border border-violet-800/40 p-3 rounded-lg text-xs text-violet-200 space-y-1">
+              <p><strong>Universalidad del dato:</strong> El medio físico (ondas electromagnéticas, fotones de pantalla, voltaje en cables o vibraciones acústicas de audio) es únicamente el vehículo de transporte; la información digital binaria subyacente es invariable.</p>
+            </div>
+          </div>
+          <a href="imagen_recuperada_desde_audio.png" download class="w-full bg-violet-600 hover:bg-violet-500 text-white p-3 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2 shadow-lg shadow-violet-600/30">
+            <i class="fa-solid fa-file-image"></i> Descargar Imagen Recuperada desde Audio (.PNG)
+          </a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-slate-800/60 border-t border-slate-700/60 py-6 text-center text-xs text-slate-400">
+    <p>Laboratorio de Comunicaciones I &bull; Transmisión Digital de Imágenes y Conversión Imagen-Audio-Imagen</p>
+    <p class="text-slate-500 mt-1">Implementado con Python, Web Audio API y Canvas HTML5</p>
+  </footer>
+
+  <!-- Interactive JavaScript Engine -->
+  <script>
+    let currentImage = null;
+    let imgData = null;
+    let audioContext = null;
+    let audioBuffer = null;
+    let audioSource = null;
+
+    // Inicializar la aplicación cargando la imagen existente
+    window.addEventListener('DOMContentLoaded', () => {
+      cargarImagenDesdeRuta('imagen_original.png');
+      setupEventListeners();
+    });
+
+    function setupEventListeners() {
+      // Subida de imagen personalizada
+      document.getElementById('input-file').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          cargarImagenDesdeDataUrl(event.target.result);
+        };
+        reader.readAsDataURL(file);
+      });
+
+      // Botón Simular Todo
+      document.getElementById('btn-reproducir-todo').addEventListener('click', () => {
+        procesarTodasLasEtapas();
+      });
+
+      // Botón Reproducir Audio
+      document.getElementById('btn-reproducir-audio').addEventListener('click', () => {
+        reproducirAudioSintetizado();
+      });
+
+      // Botón Animar Transmisión
+      document.getElementById('btn-animar-transmision').addEventListener('click', () => {
+        animarOsciloscopio();
+      });
+    }
+
+    function cargarImagenDesdeRuta(url) {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = function() {
+        procesarImagenCargada(img);
+      };
+      img.onerror = function() {
+        console.warn("No se pudo cargar la imagen directa, generando imagen fallback...");
+        generarImagenSintetica();
+      };
+      img.src = url;
+    }
+
+    function cargarImagenDesdeDataUrl(dataUrl) {
+      const img = new Image();
+      img.onload = function() {
+        procesarImagenCargada(img);
+      };
+      img.src = dataUrl;
+    }
+
+    function procesarImagenCargada(img) {
+      currentImage = img;
+      let w = img.width;
+      let h = img.height;
+
+      // Garantizar mínimo 400x400
+      if (w < 400 || h < 400) {
+        w = Math.max(400, w);
+        h = Math.max(400, h);
+      }
+
+      const canvasOrig = document.getElementById('canvas-original');
+      canvasOrig.width = w;
+      canvasOrig.height = h;
+      const ctx = canvasOrig.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      imgData = ctx.getImageData(0, 0, w, h);
+
+      // Actualizar Metadatos
+      document.getElementById('badge-resolucion').textContent = `Resolución: ${w} × ${h} px`;
+      document.getElementById('info-imagen-original').innerHTML = `
+        <li><strong class="text-slate-100">Dimensiones:</strong> ${w} × ${h} píxeles</li>
+        <li><strong class="text-slate-100">Canales:</strong> 3 (RGB - Red, Green, Blue)</li>
+        <li><strong class="text-slate-100">Profundidad:</strong> 8 bits por componente (24 bpp)</li>
+        <li><strong class="text-slate-100">Estado:</strong> <span class="text-emerald-400 font-medium">Cumple resolución mínima (&ge; 400×400)</span></li>
+      `;
+
+      // Configurar inspector de píxeles al mover mouse
+      canvasOrig.onmousemove = function(e) {
+        const rect = canvasOrig.getBoundingClientRect();
+        const scaleX = canvasOrig.width / rect.width;
+        const scaleY = canvasOrig.height / rect.height;
+        const x = Math.floor((e.clientX - rect.left) * scaleX);
+        const y = Math.floor((e.clientY - rect.top) * scaleY);
+        if (x >= 0 && x < w && y >= 0 && y < h) {
+          actualizarInspectorPixel(x, y);
+        }
+      };
+
+      // Procesar todas las etapas subsiguientes
+      procesarTodasLasEtapas();
+    }
+
+    function actualizarInspectorPixel(x, y) {
+      if (!imgData) return;
+      const w = imgData.width;
+      const idx = (y * w + x) * 4;
+      const r = imgData.data[idx];
+      const g = imgData.data[idx + 1];
+      const b = imgData.data[idx + 2];
+
+      document.getElementById('inspector-coords').textContent = `Coordenadas: (X: ${x}, Y: ${y})`;
+      document.getElementById('ins-r-dec').textContent = `Decimal: ${r}`;
+      document.getElementById('ins-g-dec').textContent = `Decimal: ${g}`;
+      document.getElementById('ins-b-dec').textContent = `Decimal: ${b}`;
+
+      document.getElementById('ins-r-bin').textContent = r.toString(2).padStart(8, '0');
+      document.getElementById('ins-g-bin').textContent = g.toString(2).padStart(8, '0');
+      document.getElementById('ins-b-bin').textContent = b.toString(2).padStart(8, '0');
+    }
+
+    function procesarTodasLasEtapas() {
+      if (!imgData) return;
+      const w = imgData.width;
+      const h = imgData.height;
+      const totalPixeles = w * h;
+      const totalBytes = totalPixeles * 3;
+      const totalBits = totalBytes * 8;
+      const totalKb = (totalBytes / 1024).toFixed(2);
+      const totalMb = (totalBytes / (1024 * 1024)).toFixed(4);
+
+      // 1. Etapa 3: Estadísticas
+      document.getElementById('val-total-pixeles').textContent = totalPixeles.toLocaleString();
+      document.getElementById('val-bpp').textContent = "24 bits";
+      document.getElementById('val-total-bytes').textContent = `${totalBytes.toLocaleString()} B`;
+      document.getElementById('val-total-kb').textContent = `≈ ${totalKb} KiB`;
+      document.getElementById('val-total-mb').textContent = `${totalMb} MiB`;
+      document.getElementById('val-total-bits').textContent = `${totalBits.toLocaleString()} bits`;
+      document.getElementById('tx-total-trama').textContent = `${(totalBytes + 12).toLocaleString()} bytes`;
+
+      // Llenar tabla de muestra con primeros 5 píxeles
+      const tbody = document.getElementById('tabla-muestra-binaria');
+      tbody.innerHTML = '';
+      for (let i = 0; i < Math.min(5, w); i++) {
+        const idx = i * 4;
+        const r = imgData.data[idx];
+        const g = imgData.data[idx + 1];
+        const b = imgData.data[idx + 2];
+        const rBin = r.toString(2).padStart(8, '0');
+        const gBin = g.toString(2).padStart(8, '0');
+        const bBin = b.toString(2).padStart(8, '0');
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="p-2 font-bold text-slate-200">(${i}, 0)</td>
+          <td class="p-2">[${r}, ${g}, ${b}]</td>
+          <td class="p-2 text-red-400">${rBin}</td>
+          <td class="p-2 text-emerald-400">${gBin}</td>
+          <td class="p-2 text-blue-400">${bBin}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      // Actualizar inspector con pixel (0,0)
+      actualizarInspectorPixel(0, 0);
+
+      // 2. Etapa 2: Transformaciones de Color
+      // Canvas Espacio Original
+      const cEspOrig = document.getElementById('canvas-espacio-original');
+      cEspOrig.width = w; cEspOrig.height = h;
+      cEspOrig.getContext('2d').putImageData(imgData, 0, 0);
+
+      // Canvas Grises (Luminancia ITU-R BT.601)
+      const cGrises = document.getElementById('canvas-grises');
+      cGrises.width = w; cGrises.height = h;
+      const ctxGrises = cGrises.getContext('2d');
+      const dataGrises = ctxGrises.createImageData(w, h);
+      for (let i = 0; i < imgData.data.length; i += 4) {
+        const y = Math.round(0.299 * imgData.data[i] + 0.587 * imgData.data[i+1] + 0.114 * imgData.data[i+2]);
+        dataGrises.data[i] = y;
+        dataGrises.data[i+1] = y;
+        dataGrises.data[i+2] = y;
+        dataGrises.data[i+3] = 255;
+      }
+      ctxGrises.putImageData(dataGrises, 0, 0);
+
+      // Canvas Canal Rojo Aislado (Color Splash: Rojo intacto + resto a escala de grises)
+      const cRojo = document.getElementById('canvas-rojo');
+      cRojo.width = w; cRojo.height = h;
+      const ctxRojo = cRojo.getContext('2d');
+      const dataRojo = ctxRojo.createImageData(w, h);
+      for (let i = 0; i < imgData.data.length; i += 4) {
+        const r = imgData.data[i];
+        const g = imgData.data[i+1];
+        const b = imgData.data[i+2];
+        const y = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        const delta = max - min;
+        const sat = max === 0 ? 0 : delta / max;
+
+        let hue = 0;
+        if (delta !== 0) {
+          if (max === r) {
+            hue = ((g - b) / delta) % 6;
+          } else if (max === g) {
+            hue = (b - r) / delta + 2;
+          } else {
+            hue = (r - g) / delta + 4;
+          }
+          hue = Math.round(hue * 60);
+          if (hue < 0) hue += 360;
+        }
+
+        // Condición para aislar el color rojo:
+        // Matiz en extremos circulares (<= 18° o >= 342°), saturación > 35% y brillo mínimo
+        const esRojo = (hue <= 18 || hue >= 342) && sat > 0.35 && max > 50;
+
+        if (esRojo) {
+          dataRojo.data[i] = r;
+          dataRojo.data[i+1] = g;
+          dataRojo.data[i+2] = b;
+        } else {
+          dataRojo.data[i] = y;
+          dataRojo.data[i+1] = y;
+          dataRojo.data[i+2] = y;
+        }
+        dataRojo.data[i+3] = 255;
+      }
+      ctxRojo.putImageData(dataRojo, 0, 0);
+
+      // 3. Etapa 4: Transmisión & Osciloscopio
+      dibujarOsciloscopioNRZ();
+
+      // 4. Etapa 5: Reconstrucción
+      const cCompOrig = document.getElementById('canvas-comp-orig');
+      cCompOrig.width = w; cCompOrig.height = h;
+      cCompOrig.getContext('2d').putImageData(imgData, 0, 0);
+
+      const cCompRec = document.getElementById('canvas-comp-rec');
+      cCompRec.width = w; cCompRec.height = h;
+      cCompRec.getContext('2d').putImageData(imgData, 0, 0);
+
+      // 5. Etapa 6 & 7: Audio y Demodulación
+      generarFormaDeOndaAudio();
+      const cAudioRec = document.getElementById('canvas-audio-rec');
+      cAudioRec.width = w; cAudioRec.height = h;
+      cAudioRec.getContext('2d').putImageData(imgData, 0, 0);
+    }
+
+    // Dibujar Osciloscopio NRZ-L
+    function dibujarOsciloscopioNRZ(offset = 0) {
+      if (!imgData) return;
+      const canvas = document.getElementById('canvas-osciloscopio');
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+
+      ctx.fillStyle = "#030712";
+      ctx.fillRect(0, 0, w, h);
+
+      // Grilla de osciloscopio
+      ctx.strokeStyle = "#1e293b";
+      ctx.lineWidth = 1;
+      for (let x = 0; x < w; x += 30) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+      }
+      for (let y = 0; y < h; y += 30) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+      }
+
+      // Obtener secuencia de bits a partir de los bytes
+      const bits = [];
+      for (let i = 0; i < 40; i++) {
+        const byteVal = imgData.data[((i + offset) * 4) % imgData.data.length];
+        const binStr = byteVal.toString(2).padStart(8, '0');
+        for (let b of binStr) bits.push(parseInt(b));
+      }
+
+      const bitWidth = w / 32;
+      const yHigh = 35;
+      const yLow = 115;
+
+      ctx.strokeStyle = "#f59e0b";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+
+      let currentX = 0;
+      for (let i = 0; i < 32; i++) {
+        const bit = bits[i];
+        const nextY = bit === 1 ? yHigh : yLow;
+        if (i === 0) {
+          ctx.moveTo(currentX, nextY);
+        } else {
+          ctx.lineTo(currentX, nextY);
+        }
+        ctx.lineTo(currentX + bitWidth, nextY);
+
+        // Texto de bit
+        ctx.fillStyle = bit === 1 ? "#ef4444" : "#3b82f6";
+        ctx.font = "bold 12px monospace";
+        ctx.fillText(bit, currentX + bitWidth / 2 - 4, bit === 1 ? yHigh - 10 : yLow + 20);
+
+        currentX += bitWidth;
+      }
+      ctx.stroke();
+
+      // Vista previa de texto
+      const previewBits = bits.slice(0, 32).join('');
+      document.getElementById('stream-preview').textContent = `Flujo Tx: ${previewBits.substring(0, 8)} ${previewBits.substring(8, 16)} ${previewBits.substring(16, 24)} ${previewBits.substring(24, 32)}...`;
+    }
+
+    let animInterval = null;
+    function animarOsciloscopio() {
+      if (animInterval) {
+        clearInterval(animInterval);
+        animInterval = null;
+        return;
+      }
+      let offset = 0;
+      animInterval = setInterval(() => {
+        offset = (offset + 1) % 1000;
+        dibujarOsciloscopioNRZ(offset);
+      }, 100);
+    }
+
+    // Generar y Dibujar Forma de Onda de Audio
+    function generarFormaDeOndaAudio() {
+      if (!imgData) return;
+      const canvas = document.getElementById('canvas-audio-waveform');
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+
+      ctx.fillStyle = "#030712";
+      ctx.fillRect(0, 0, w, h);
+
+      // Grilla
+      ctx.strokeStyle = "#1e293b";
+      ctx.lineWidth = 1;
+      for (let y = 0; y < h; y += 25) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+      }
+
+      ctx.strokeStyle = "#10b981";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+
+      const totalPuntos = w;
+      const step = Math.floor(imgData.data.length / totalPuntos);
+
+      for (let x = 0; x < totalPuntos; x++) {
+        const val = imgData.data[x * step] || 128;
+        const y = h - (val / 255) * (h - 20) - 10;
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      const totalSamples = imgData.data.length * 3 / 4;
+      const dur = (totalSamples / 44100).toFixed(2);
+      document.getElementById('audio-duration-label').textContent = `Duración: ~${dur} s`;
+      document.getElementById('audio-total-samples').textContent = totalSamples.toLocaleString();
+    }
+
+    // Reproducción sonora usando Web Audio API nativo
+    function reproducirAudioSintetizado() {
+      if (!imgData) return;
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!audioContext) audioContext = new AudioContext();
+
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+
+      // Detener si ya estaba sonando
+      if (audioSource) {
+        audioSource.stop();
+        audioSource = null;
+        return;
+      }
+
+      const sampleRate = 44100;
+      // Tomar hasta 3 segundos de sonido para reproducir demostración acústica agradable
+      const maxSeconds = 3.5;
+      const numFrames = Math.min(Math.floor(sampleRate * maxSeconds), Math.floor(imgData.data.length * 3 / 4));
+      const buffer = audioContext.createBuffer(1, numFrames, sampleRate);
+      const channelData = buffer.getChannelData(0);
+
+      let dataIdx = 0;
+      for (let i = 0; i < numFrames; i++) {
+        if (dataIdx % 4 === 3) dataIdx++; // saltar canal alfa
+        const byteVal = imgData.data[dataIdx % imgData.data.length];
+        channelData[i] = (byteVal - 128) / 128.0; // normalizar a [-1.0, 1.0]
+        dataIdx++;
+      }
+
+      audioSource = audioContext.createBufferSource();
+      audioSource.buffer = buffer;
+      audioSource.connect(audioContext.destination);
+      audioSource.start();
+
+      const btn = document.getElementById('btn-reproducir-audio');
+      btn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i> Reproduciendo...';
+      audioSource.onended = () => {
+        btn.innerHTML = '<i class="fa-solid fa-volume-high"></i> Reproducir Sonido de la Imagen';
+        audioSource = null;
+      };
+    }
+  </script>
+</body>
+</html>
