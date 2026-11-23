@@ -459,6 +459,37 @@
       img.src = url;
     }
 
+    function generarImagenSintetica() {
+      const w = 500, h = 500;
+      const offCanvas = document.createElement('canvas');
+      offCanvas.width = w;
+      offCanvas.height = h;
+      const ctx = offCanvas.getContext('2d');
+      ctx.fillStyle = '#f0f3f6';
+      ctx.fillRect(0, 0, w, h);
+
+      const grad = ctx.createLinearGradient(0, 0, w / 3, h);
+      grad.addColorStop(0, '#e53935');
+      grad.addColorStop(1, '#1e88e5');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w / 3, h);
+
+      ctx.fillStyle = '#2196f3';
+      ctx.fillRect(w / 3 + 20, 30, w - w / 3 - 50, h / 2 - 50);
+      ctx.fillStyle = '#e53935';
+      ctx.beginPath();
+      ctx.arc(w / 3 + 120, h / 2 + 80, 70, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 20px sans-serif';
+      ctx.fillText('COMUNICACIONES I', w / 3 + 35, 70);
+
+      const img = new Image();
+      img.onload = () => procesarImagenCargada(img);
+      img.src = offCanvas.toDataURL();
+    }
+
     function cargarImagenDesdeDataUrl(dataUrl) {
       const img = new Image();
       img.onload = function() {
